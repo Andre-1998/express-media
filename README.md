@@ -189,9 +189,19 @@ express doctor
 | | 仓库（本目录） | 插件 |
 | --- | --- | --- |
 | 位置 | 本仓库根目录 | 插件安装目录（如 `<插件目录>`） |
-| 装了什么 | 全部：源码 + 测试 + 开发脚本 | 只装运行时：`bin/` `src/` `data/` + 一份 Skill |
+| 装了什么 | 全部：源码 + 测试 + 开发脚本 + 与插件包逐字节一致的 `skills/express-media/SKILL.md`、`.minimax-plugin/plugin.json` | 只装运行时：`bin/` `src/` `data/` + `skills/express-media/SKILL.md` + `.minimax-plugin/plugin.json` |
 | 合成素材 | 有（101MB，已 gitignore） | **没有** —— 太大，插件不带 |
+| `npm run fixtures/test/calibrate/mutation` | 有，**仅供本仓库开发验证** | **没有** —— 插件包不分发开发脚本，包内也没有 `test/` `scripts/` 目录 |
 | 用途 | 改代码、跑测试、标定阈值 | 在 Mavis 里说人话就能用 |
+
+**仓库里这两份文件与插件包逐字节一致**，可以直接与提交的 ZIP 对照核验：
+
+```powershell
+Get-FileHash <仓库根目录>\skills\express-media\SKILL.md
+Get-FileHash <插件目录>\skills\express-media\SKILL.md
+```
+
+下文提到的 `npm run ...` 全部是**本仓库的开发验证脚本**，不随插件包分发，插件包里也没有 `test/` `scripts/` 目录。
 
 **没打包的东西影响功能吗？不影响。** `test/`、`scripts/`、素材都只是开发和验证用的，
 运行时代码一行都没引用它们。
