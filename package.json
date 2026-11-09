@@ -1,0 +1,31 @@
+{
+  "name": "express-media",
+  "version": "0.1.0",
+  "description": "急件 — 视频太大发不出去？按平台限制实测收敛地压好、封好、发出去。本地处理，不上传。",
+  "type": "module",
+  "bin": {
+    "express": "bin/express.mjs"
+  },
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "test": "node --test --test-concurrency=1 --test-timeout=900000 \"test/unit/*.test.js\" \"test/e2e/*.test.js\"",
+    "test:unit": "node --test --test-concurrency=1 --test-timeout=120000 \"test/unit/*.test.js\"",
+    "test:e2e": "node --test --test-concurrency=1 --test-timeout=900000 \"test/e2e/*.test.js\"",
+    "calibrate": "node scripts/calibrate.mjs",
+    "mutation": "node scripts/mutation.mjs",
+    "fixtures": "node test/fixtures/make-fixtures.mjs",
+    "doctor": "node bin/express.mjs doctor"
+  },
+  "keywords": [
+    "video",
+    "compress",
+    "ffmpeg",
+    "size-limit",
+    "wechat",
+    "discord",
+    "telegram"
+  ],
+  "license": "MIT"
+}

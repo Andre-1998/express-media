@@ -1,0 +1,19 @@
+# 合成素材不入库：单个 big.mp4 就有 90MB
+test/fixtures/media/
+
+# 工具产物
+*.express-ledger.jsonl
+express-台账.html
+*.card.html
+*.cover.jpg
+
+# 临时中间文件（正常会被清掉，兜底）
+*.p1.tmp.mp4
+*.p2.tmp.mp4
+*.rb.tmp.mp4
+*.bad-*
+*.old-*
+
+node_modules/
+.DS_Store
+Thumbs.db
