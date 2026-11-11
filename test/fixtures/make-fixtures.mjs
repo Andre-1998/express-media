@@ -5,14 +5,23 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { run } from '../../src/ffmpeg.js';
+import { resolveBinaries, run } from '../../src/ffmpeg.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const MEDIA_DIR = path.join(here, 'media');
 const STAMP_VERSION = '3';
 
-export const FF_BIN = 'C:\\Users\\UglyPo\\.minimax\\tools\\ffmpeg\\ffmpeg-9.0.2-essentials_build\\bin\\ffmpeg.exe';
-export const PROBE_BIN = 'C:\\Users\\UglyPo\\.minimax\\tools\\ffmpeg\\ffmpeg-9.0.2-essentials_build\\bin\\ffprobe.exe';
+export const FF_BIN = process.env.EXPRESS_FFMPEG || '';
+export const PROBE_BIN = process.env.EXPRESS_FFPROBE || '';
+
+// ffmpeg / ffprobe 的位置不写死：公开仓库里留死路径等于泄露本机用户名，
+// 而且换台机器就失效。优先环境变量，缺省走 src/ffmpeg.js 的候选解析
+// （它会真的把二进制跑一遍，避开 Windows 上 winget 留下的悬空符号链接）。
+async function binaries(ff, ffprobe) {
+  if (ff && ffprobe) return { ff, ffprobe };
+  const bins = await resolveBinaries();
+  return { ff: ff || bins.ffmpeg.path, ffprobe: ffprobe || bins.ffprobe.path };
+}
 
 function pickFont() {
   for (const f of ['C:\\Windows\\Fonts\\msyh.ttc', 'C:\\Windows\\Fonts\\consola.ttf', 'C:\\Windows\\Fonts\\arial.ttf']) {
@@ -225,7 +234,8 @@ export const FIXTURE_EXPECT = {
 };
 
 /** 逐条核对夹具的真实属性，返回 { name, problems[] }。problems 非空 = 夹具不可信。 */
-export async function verifyFixtures({ ffprobe = PROBE_BIN, ff = FF_BIN } = {}) {
+export async function verifyFixtures({ ffprobe, ff } = {}) {
+  ({ ff, ffprobe } = await binaries(ff, ffprobe));
   const { probe } = await import('../../src/probe.js');
   const { analyzeContent } = await import('../../src/classify.js');
   const paths = fixturePaths();
@@ -280,11 +290,12 @@ export async function verifyFixtures({ ffprobe = PROBE_BIN, ff = FF_BIN } = {}) 
  * 光看「文件在不在」是不够的：被中断的 ffmpeg 会留下一个几 MB 大小、却缺 moov atom 的
  * 截断 mp4（文件存在、能通过 stat、但根本解不开）。所以必须真的让 ffprobe 解一次。
  */
-export async function isValidMedia(file, ffprobe = PROBE_BIN) {
+export async function isValidMedia(file, ffprobe) {
   if (!existsSync(file)) return false;
   if (statSync(file).size === 0) return false;
+  const probeBin = ffprobe || (await binaries(undefined, undefined)).ffprobe;
   try {
-    const { code, stdout } = await run(ffprobe, ['-v', 'error', '-print_format', 'json', '-show_streams', file]);
+    const { code, stdout } = await run(probeBin, ['-v', 'error', '-print_format', 'json', '-show_streams', file]);
     if (code !== 0) return false;
     const j = JSON.parse(stdout);
     return Array.isArray(j.streams) && j.streams.some((s) => s.codec_type === 'video');
@@ -293,7 +304,8 @@ export async function isValidMedia(file, ffprobe = PROBE_BIN) {
   }
 }
 
-export async function ensureFixtures({ ff = FF_BIN, force = false, only = null } = {}) {
+export async function ensureFixtures({ ff, ffprobe, force = false, only = null } = {}) {
+  ({ ff, ffprobe } = await binaries(ff, ffprobe));
   mkdirSync(MEDIA_DIR, { recursive: true });
   const names = only && only.length ? only : FIXTURE_NAMES;
   // --force 只重建「被选中的」那几个，不要连整个素材目录一起清掉——
@@ -316,13 +328,13 @@ export async function ensureFixtures({ ff = FF_BIN, force = false, only = null }
 
   for (const n of names) {
     const target = fixturePaths()[n];
-    if (!force && await isValidMedia(target)) continue;
+    if (!force && await isValidMedia(target, ffprobe)) continue;
     if (existsSync(target)) {
       // 上一次留下的坏文件会挡着，重新合成前先把它移开
       renameSync(target, `${target}.bad-${Date.now()}`);
     }
     await RECIPES[n](ff);
-    if (!(await isValidMedia(target))) {
+    if (!(await isValidMedia(target, ffprobe))) {
       throw new Error(`合成的素材解不开：${target}（可能是合成过程被中断，或者 ffmpeg 参数有问题）`);
     }
   }

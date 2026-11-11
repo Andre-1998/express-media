@@ -167,8 +167,8 @@ Windows 上 `winget upgrade` 之后，`%LOCALAPPDATA%\Microsoft\WinGet\Links\ffm
 
 ```bash
 express doctor
-# ✔ 可用：C:\Users\...\ffmpeg-9.0.2-essentials_build\bin\ffmpeg.exe
-# ! 这个 ffmpeg 用不了：C:\...\WinGet\Links\ffmpeg.exe
+# ✔ 可用：<ffmpeg 安装目录>\bin\ffmpeg.exe
+# ! 这个 ffmpeg 用不了：<PATH 里的链接目录>\WinGet\Links\ffmpeg.exe
 #   路径能解析，但执行时找不到目标文件——典型的悬空符号链接（来源：PATH）
 ```
 
@@ -183,6 +183,8 @@ express doctor
 ---
 
 ## 仓库 与 MiniMax Code 插件
+
+公开仓库：https://github.com/Andre-1998/express-media（MiniMax Plugin 上架的维护权佐证）
 
 同一份代码有两种装法，用途不同：
 
